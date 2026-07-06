@@ -1,0 +1,36 @@
+---
+- name: Configure app server and deploy container
+  hosts: app_servers
+  become: true
+
+  tasks:
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull latest application image
+      docker_image:
+        name: "{{ dockerhub_username }}/devops-demo-app"
+        tag: latest
+        source: pull
+
+    - name: Stop existing container if running
+      docker_container:
+        name: devops-demo-app
+        state: absent
+
+    - name: Run application container
+      docker_container:
+        name: devops-demo-app
+        image: "{{ dockerhub_username }}/devops-demo-app:latest"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "80:3000"
